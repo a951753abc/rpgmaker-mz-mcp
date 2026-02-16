@@ -210,12 +210,15 @@ export function convertCommand(cmd: {
       const positionType = (cmd.positionType as number) || 2;
       const text = (cmd.text as string) || '';
       const lines = text.split('\n');
-      return [
-        { code: 101, indent: 0, parameters: [face, faceIndex, background, positionType] },
-        ...lines.map((line) => ({
-          code: 401, indent: 0, parameters: [line],
-        })),
-      ];
+      // RPG Maker MZ message window shows max 4 lines per box
+      const result: EventCommand[] = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (i % 4 === 0) {
+          result.push({ code: 101, indent: 0, parameters: [face, faceIndex, background, positionType] });
+        }
+        result.push({ code: 401, indent: 0, parameters: [lines[i]] });
+      }
+      return result;
     }
 
     case 'show_choices': {
