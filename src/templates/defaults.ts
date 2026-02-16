@@ -282,6 +282,17 @@ export function defaultMap(width: number, height: number, tilesetId: number): Ma
 
 export function defaultSystem(gameTitle: string): Record<string, unknown> {
   return {
+    advanced: {
+      gameId: Math.floor(Math.random() * 90000000) + 10000000,
+      screenWidth: 816,
+      screenHeight: 624,
+      uiAreaWidth: 816,
+      uiAreaHeight: 624,
+      mainFontFilename: 'mplus-1m-regular.woff',
+      numberFontFilename: 'mplus-2p-bold-sub.woff',
+      fallbackFonts: 'Verdana, sans-serif',
+      fontSize: 26,
+    },
     airship: { bgm: defaultAudio(), characterIndex: 0, characterName: '', startMapId: 0, startX: 0, startY: 0 },
     armorTypes: ['', 'General Armor', 'Magic Armor', 'Light Armor', 'Heavy Armor', 'Small Shield', 'Large Shield'],
     attackMotions: [
