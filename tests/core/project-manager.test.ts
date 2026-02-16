@@ -80,7 +80,7 @@ describe('ProjectManager.validate', () => {
     const pm = new ProjectManager(tmpDir);
     const result = await pm.validate();
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.includes('Game.rmmzproject'))).toBe(true);
+    expect(result.errors.some((e) => e.includes('rmmzproject'))).toBe(true);
   });
 
   it('should report missing data directory', async () => {

@@ -114,8 +114,11 @@ export function registerProjectTools(server: McpServer): void {
     },
     async ({ projectPath, gameTitle, rpgmakerPath }) => {
       try {
-        // Check if directory already exists with content
-        if (await FileHandler.exists(path.join(projectPath, 'Game.rmmzproject'))) {
+        // Check if directory already exists with content (accept both casings)
+        if (
+          await FileHandler.exists(path.join(projectPath, 'game.rmmzproject')) ||
+          await FileHandler.exists(path.join(projectPath, 'Game.rmmzproject'))
+        ) {
           return {
             content: [{
               type: 'text' as const,
@@ -139,8 +142,27 @@ export function registerProjectTools(server: McpServer): void {
           await FileHandler.ensureDir(path.join(projectPath, dir));
         }
 
-        // Create .rmmzproject file (empty JSON object)
-        await FileHandler.writeJson(path.join(projectPath, 'Game.rmmzproject'), {});
+        // Create game.rmmzproject (plain text marker, not JSON)
+        await fs.writeFile(path.join(projectPath, 'game.rmmzproject'), 'RPGMZ\n', 'utf-8');
+
+        // Create package.json (required by NW.js for playtest)
+        const packageJson = {
+          name: 'rmmz-game',
+          main: 'index.html',
+          'chromium-args': '--force-color-profile=srgb',
+          window: {
+            title: gameTitle,
+            width: 816,
+            height: 624,
+            position: 'center',
+            icon: 'icon/icon.png',
+          },
+        };
+        await fs.writeFile(
+          path.join(projectPath, 'package.json'),
+          JSON.stringify(packageJson, null, 4) + '\n',
+          'utf-8',
+        );
 
         // Create System.json
         const system = defaultSystem(gameTitle);
@@ -234,6 +256,21 @@ export function registerProjectTools(server: McpServer): void {
             }
           }
           logger.info(`Copied ${copiedCount}/${engineFiles.length} engine files from ${newdataDir}`);
+
+          // Update game.rmmzproject with version from main.js (e.g. "RPGMZ 1.10.0")
+          try {
+            const mainJs = await fs.readFile(path.join(projectPath, 'js', 'main.js'), 'utf-8');
+            const match = mainJs.match(/main\.js v([\d.]+)/);
+            if (match) {
+              await fs.writeFile(
+                path.join(projectPath, 'game.rmmzproject'),
+                `RPGMZ ${match[1]}\n`,
+                'utf-8',
+              );
+            }
+          } catch {
+            // Version detection is best-effort
+          }
         } else {
           engineWarnings.push(
             'RPG Maker MZ installation not found. Engine files (js/main.js, js/rmmz_*.js, js/libs/*, fonts/*) were not copied.',
@@ -247,7 +284,7 @@ export function registerProjectTools(server: McpServer): void {
 
         logger.info(`Project created: ${projectPath}`);
 
-        let resultText = `Project created successfully!\n\nTitle: ${gameTitle}\nPath: ${projectPath}\n\nCreated files:\n- Game.rmmzproject\n- index.html, css/game.css, js/plugins.js\n- data/System.json\n- data/Actors.json (1 default actor)\n- data/Classes.json (1 default class)\n- data/Skills.json, Items.json, Weapons.json, Armors.json, Enemies.json, States.json\n- data/Map001.json (17x13 default map)\n- data/MapInfos.json\n- data/CommonEvents.json, Troops.json, Animations.json, Tilesets.json`;
+        let resultText = `Project created successfully!\n\nTitle: ${gameTitle}\nPath: ${projectPath}\n\nCreated files:\n- game.rmmzproject, package.json\n- index.html, css/game.css, js/plugins.js\n- data/System.json\n- data/Actors.json (1 default actor)\n- data/Classes.json (1 default class)\n- data/Skills.json, Items.json, Weapons.json, Armors.json, Enemies.json, States.json\n- data/Map001.json (17x13 default map)\n- data/MapInfos.json\n- data/CommonEvents.json, Troops.json, Animations.json, Tilesets.json`;
 
         if (newdataDir && engineWarnings.length === 0) {
           resultText += `\n- Engine files copied from: ${newdataDir}`;

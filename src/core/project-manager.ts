@@ -21,7 +21,8 @@ const REQUIRED_DATA_FILES = [
   'Animations.json',
 ];
 
-const PROJECT_FILE = 'Game.rmmzproject';
+/** Accepted project file names (RPG Maker MZ uses lowercase since ~v1.6). */
+const PROJECT_FILES = ['game.rmmzproject', 'Game.rmmzproject'];
 
 export interface ProjectInfo {
   name: string;
@@ -60,10 +61,16 @@ export class ProjectManager {
   async validate(): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
-    // Check project file (.rmmzproject)
-    const projectFile = path.join(this.projectPath, PROJECT_FILE);
-    if (!(await FileHandler.exists(projectFile))) {
-      errors.push(`Missing project file: ${PROJECT_FILE}`);
+    // Check project file (.rmmzproject) — accept both casings
+    let foundProjectFile = false;
+    for (const name of PROJECT_FILES) {
+      if (await FileHandler.exists(path.join(this.projectPath, name))) {
+        foundProjectFile = true;
+        break;
+      }
+    }
+    if (!foundProjectFile) {
+      errors.push('Missing project file: game.rmmzproject');
     }
 
     // Check data directory
