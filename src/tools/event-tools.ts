@@ -282,15 +282,41 @@ Supported command types:
           page.list = [...convertedCommands, endCommand()];
         }
 
+        // Auto-add blank page for Autorun/Parallel events that set a self switch
+        // Without this, the event loops forever after the self switch is set
+        let autoPageAdded = false;
+        if (page.trigger === 3 || page.trigger === 4) {
+          const selfSwitchCmd = page.list.find((c) => c.code === 123);
+          if (selfSwitchCmd) {
+            const switchKey = selfSwitchCmd.parameters[0] as string;
+            const hasFollowup = event.pages.some((p, idx) =>
+              idx !== pageIndex && p.conditions?.selfSwitchValid && p.conditions?.selfSwitchCh === switchKey
+            );
+            if (!hasFollowup) {
+              const blankPage = defaultEventPage();
+              blankPage.conditions.selfSwitchCh = switchKey;
+              blankPage.conditions.selfSwitchValid = true;
+              blankPage.trigger = 0;
+              event.pages.push(blankPage);
+              autoPageAdded = true;
+            }
+          }
+        }
+
         await writeMap(project.dataPath, mapId, mapData);
         await project.getVersionSync().bump();
 
         logger.info(`Added ${convertedCommands.length} command(s) to event ${eventId} page ${pageIndex} on map ${mapId}`);
 
+        let msg = `Added ${convertedCommands.length} command(s) to event ${eventId}, page ${pageIndex} on map ${mapId}.`;
+        if (autoPageAdded) {
+          msg += `\n\nNote: Auto-added a blank page (self switch condition) to prevent autorun loop.`;
+        }
+
         return {
           content: [{
             type: 'text' as const,
-            text: `Added ${convertedCommands.length} command(s) to event ${eventId}, page ${pageIndex} on map ${mapId}.`,
+            text: msg,
           }],
         };
       } catch (error) {
