@@ -423,6 +423,90 @@ export function convertCommand(cmd: {
     case 'return_to_title':
       return [{ code: 354, indent: 0, parameters: [] }];
 
+    case 'change_party_member': {
+      const actorId = (cmd.actorId as number) || 1;
+      const operation = (cmd.operation as number) || 0; // 0=add, 1=remove
+      const initialize = (cmd.initialize as boolean) ?? true;
+      return [
+        { code: 129, indent: 0, parameters: [actorId, operation, initialize] },
+      ];
+    }
+
+    case 'change_class': {
+      const actorId = (cmd.actorId as number) || 1;
+      const classId = (cmd.classId as number) || 1;
+      const keepExp = (cmd.keepExp as boolean) ?? false;
+      return [
+        { code: 321, indent: 0, parameters: [actorId, classId, keepExp] },
+      ];
+    }
+
+    case 'change_skill': {
+      const actorId = (cmd.actorId as number) || 1;
+      const operation = (cmd.operation as number) || 0; // 0=learn, 1=forget
+      const skillId = (cmd.skillId as number) || 1;
+      return [
+        { code: 318, indent: 0, parameters: [0, actorId, operation, skillId] },
+      ];
+    }
+
+    case 'change_level': {
+      const actorId = (cmd.actorId as number) || 0;
+      const operation = (cmd.operation as number) || 0; // 0=increase, 1=decrease
+      const operandType = (cmd.operandType as number) || 0;
+      const value = (cmd.value as number) || 1;
+      const showLevelUp = (cmd.showLevelUp as boolean) ?? true;
+      return [
+        { code: 316, indent: 0, parameters: [0, actorId, operation, operandType, value, showLevelUp] },
+      ];
+    }
+
+    case 'change_state': {
+      const actorId = (cmd.actorId as number) || 0;
+      const operation = (cmd.operation as number) || 0; // 0=add, 1=remove
+      const stateId = (cmd.stateId as number) || 1;
+      return [
+        { code: 313, indent: 0, parameters: [0, actorId, operation, stateId] },
+      ];
+    }
+
+    case 'change_name': {
+      const actorId = (cmd.actorId as number) || 1;
+      const name = (cmd.name as string) || '';
+      return [
+        { code: 320, indent: 0, parameters: [actorId, name] },
+      ];
+    }
+
+    case 'change_weapons': {
+      const weaponId = (cmd.weaponId as number) || 1;
+      const operation = (cmd.operation as number) || 0;
+      const operandType = (cmd.operandType as number) || 0;
+      const value = (cmd.value as number) || 1;
+      return [
+        { code: 127, indent: 0, parameters: [weaponId, operation, operandType, value] },
+      ];
+    }
+
+    case 'change_armors': {
+      const armorId = (cmd.armorId as number) || 1;
+      const operation = (cmd.operation as number) || 0;
+      const operandType = (cmd.operandType as number) || 0;
+      const value = (cmd.value as number) || 1;
+      return [
+        { code: 128, indent: 0, parameters: [armorId, operation, operandType, value] },
+      ];
+    }
+
+    case 'show_balloon_icon': {
+      const characterId = (cmd.characterId as number) ?? -1; // -1=player, 0=this event
+      const balloonId = (cmd.balloonId as number) || 1; // 1=exclamation, 2=question, etc.
+      const waitForCompletion = (cmd.waitForCompletion as boolean) ?? false;
+      return [
+        { code: 213, indent: 0, parameters: [characterId, balloonId, waitForCompletion] },
+      ];
+    }
+
     default:
       throw new Error(`Unknown command type: ${cmd.type}`);
   }
