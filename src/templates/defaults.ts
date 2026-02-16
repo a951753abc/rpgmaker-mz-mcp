@@ -33,15 +33,15 @@ export function defaultClass(id: number): Class {
     name: '',
     note: '',
     params: [
-      // MHP, MMP, ATK, DEF, MAT, MDF, AGI, LUK — each array has 99 levels
-      Array.from({ length: 99 }, (_, i) => 400 + i * 10),
-      Array.from({ length: 99 }, (_, i) => 80 + i * 5),
-      Array.from({ length: 99 }, (_, i) => 15 + i * 2),
-      Array.from({ length: 99 }, (_, i) => 15 + i * 2),
-      Array.from({ length: 99 }, (_, i) => 15 + i * 2),
-      Array.from({ length: 99 }, (_, i) => 15 + i * 2),
-      Array.from({ length: 99 }, (_, i) => 15 + i * 2),
-      Array.from({ length: 99 }, (_, i) => 15 + i * 2),
+      // MHP, MMP, ATK, DEF, MAT, MDF, AGI, LUK — each array needs 100 entries (index 0-99)
+      Array.from({ length: 100 }, (_, i) => 400 + i * 10),
+      Array.from({ length: 100 }, (_, i) => 80 + i * 5),
+      Array.from({ length: 100 }, (_, i) => 15 + i * 2),
+      Array.from({ length: 100 }, (_, i) => 15 + i * 2),
+      Array.from({ length: 100 }, (_, i) => 15 + i * 2),
+      Array.from({ length: 100 }, (_, i) => 15 + i * 2),
+      Array.from({ length: 100 }, (_, i) => 15 + i * 2),
+      Array.from({ length: 100 }, (_, i) => 15 + i * 2),
     ],
   };
 }
