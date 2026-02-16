@@ -10,6 +10,47 @@ const entityTypeEnum = z.enum([
   'weapons', 'armors', 'enemies', 'states',
 ]);
 
+/**
+ * Auto-wrap long text fields to fit RPG Maker MZ display areas.
+ * Status screen profile: ~34 full-width chars/line, 2 lines.
+ * Help window description: ~34 full-width chars/line, 2 lines.
+ */
+function wrapTextField(text: string, maxLineLen = 34): string {
+  if (!text || !text.includes('\n') && text.length <= maxLineLen) return text;
+  // Already has manual line breaks — leave as is
+  if (text.includes('\n')) return text;
+  const lines: string[] = [];
+  let remaining = text;
+  while (remaining.length > maxLineLen) {
+    let breakAt = -1;
+    // Prefer sentence-ending punctuation
+    for (let j = maxLineLen; j >= maxLineLen - 10 && j >= 1; j--) {
+      if ('。！？'.includes(remaining[j - 1])) { breakAt = j; break; }
+    }
+    // Then clause punctuation
+    if (breakAt === -1) {
+      for (let j = maxLineLen; j >= maxLineLen - 10 && j >= 1; j--) {
+        if ('、）」』】）'.includes(remaining[j - 1])) { breakAt = j; break; }
+      }
+    }
+    if (breakAt === -1) breakAt = maxLineLen;
+    lines.push(remaining.substring(0, breakAt));
+    remaining = remaining.substring(breakAt);
+  }
+  if (remaining) lines.push(remaining);
+  return lines.join('\n');
+}
+
+function autoWrapEntityText(entityType: EntityType, data: Record<string, unknown>): void {
+  if (entityType === 'actors' && typeof data.profile === 'string') {
+    data.profile = wrapTextField(data.profile);
+  }
+  const descTypes: EntityType[] = ['skills', 'items', 'weapons', 'armors'];
+  if (descTypes.includes(entityType) && typeof data.description === 'string') {
+    data.description = wrapTextField(data.description);
+  }
+}
+
 function getManager(entityType: EntityType): DatabaseManager<{ id: number; name: string }> {
   const project = requireProject();
   const config = ENTITY_TYPES[entityType];
@@ -105,6 +146,7 @@ export function registerDatabaseTools(server: McpServer): void {
             isError: true,
           };
         }
+        autoWrapEntityText(entityType, data);
         const manager = getManager(entityType);
         const result = await manager.create(data as Partial<{ id: number; name: string }>);
         const label = ENTITY_TYPES[entityType].label;
@@ -137,6 +179,7 @@ export function registerDatabaseTools(server: McpServer): void {
     },
     async ({ entityType, id, data }) => {
       try {
+        autoWrapEntityText(entityType, data);
         const manager = getManager(entityType);
         const updated = await manager.update(id, data as Partial<{ id: number; name: string }>);
         const label = ENTITY_TYPES[entityType].label;
