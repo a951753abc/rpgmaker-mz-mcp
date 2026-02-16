@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.tmp
+*.bak
+.DS_Store
