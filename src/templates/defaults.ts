@@ -70,6 +70,7 @@ export function defaultSkill(id: number): Skill {
     successRate: 100,
     tpCost: 0,
     tpGain: 0,
+    messageType: 1,
   };
 }
 
@@ -171,6 +172,8 @@ export function defaultState(id: number): State {
     restriction: 0,
     stepsToRemove: 100,
     traits: [],
+    releaseByDamage: false,
+    messageType: 1,
   };
 }
 
@@ -292,6 +295,9 @@ export function defaultSystem(gameTitle: string): Record<string, unknown> {
       numberFontFilename: 'mplus-2p-bold-sub.woff',
       fallbackFonts: 'Verdana, sans-serif',
       fontSize: 26,
+      screenScale: 1,
+      windowOpacity: 192,
+      picturesUpperLimit: 100,
     },
     airship: { bgm: defaultAudio(), characterIndex: 0, characterName: '', startMapId: 0, startX: 0, startY: 0 },
     armorTypes: ['', 'General Armor', 'Magic Armor', 'Light Armor', 'Heavy Armor', 'Small Shield', 'Large Shield'],
@@ -335,8 +341,10 @@ export function defaultSystem(gameTitle: string): Record<string, unknown> {
     optFloorDeath: false,
     optFollowers: true,
     optKeyItemsNumber: false,
+    optMessageSkip: true,
     optSideView: true,
     optSlipDeath: false,
+    optSplashScreen: false,
     optTransparent: false,
     partyMembers: [1],
     ship: { bgm: defaultAudio(), characterIndex: 0, characterName: '', startMapId: 0, startX: 0, startY: 0 },
@@ -449,5 +457,9 @@ export function defaultSystem(gameTitle: string): Record<string, unknown> {
     victoryMe: { name: 'Victory1', pan: 0, pitch: 100, volume: 90 },
     weaponTypes: ['', 'Dagger', 'Sword', 'Flail', 'Axe', 'Whip', 'Staff', 'Bow', 'Crossbow', 'Gun', 'Claw', 'Glove', 'Spear'],
     windowTone: [0, 0, 0, 0],
+    editor: { messageWidth1: 60, messageWidth2: 47, jsonFormatLevel: 1 },
+    faceSize: 144,
+    iconSize: 32,
+    tileSize: 48,
   };
 }

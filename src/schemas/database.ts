@@ -80,7 +80,8 @@ export const SkillSchema = z.object({
   successRate: z.number(),
   tpCost: z.number(),
   tpGain: z.number(),
-});
+  messageType: z.number().optional(),
+}).passthrough();
 
 export const ItemSchema = z.object({
   id: z.number(),
@@ -183,7 +184,9 @@ export const StateSchema = z.object({
   restriction: z.number(),
   stepsToRemove: z.number(),
   traits: z.array(TraitSchema),
-});
+  releaseByDamage: z.boolean().optional(),
+  messageType: z.number().optional(),
+}).passthrough();
 
 // --- Type exports ---
 
