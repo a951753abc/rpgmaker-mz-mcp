@@ -1,9 +1,12 @@
+import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ProjectManager } from '../core/project-manager.js';
 import { FileHandler } from '../core/file-handler.js';
 import { defaultSystem, defaultMap, defaultActor, defaultClass, defaultSkill, defaultItem, defaultWeapon, defaultArmor, defaultEnemy, defaultState } from '../templates/defaults.js';
+import { INDEX_HTML, GAME_CSS, PLUGINS_JS } from '../templates/engine-files.js';
 import { logger } from '../logger.js';
 
 let currentProject: ProjectManager | null = null;
@@ -21,6 +24,43 @@ export function requireProject(): ProjectManager {
     throw new Error('No project loaded. Use load_project or create_project first.');
   }
   return currentProject;
+}
+
+/**
+ * Find the RPG Maker MZ newdata directory containing engine template files.
+ * Checks user-provided path first, then auto-detects common install locations.
+ */
+async function findNewdataDir(rpgmakerPath?: string): Promise<string | null> {
+  const candidates: string[] = [];
+
+  if (rpgmakerPath) {
+    // User-provided path: try both as-is and with /newdata appended
+    candidates.push(rpgmakerPath);
+    candidates.push(path.join(rpgmakerPath, 'newdata'));
+  }
+
+  const home = os.homedir();
+  if (process.platform === 'darwin') {
+    candidates.push(
+      path.join(home, 'Library/Application Support/Steam/steamapps/common/RPG Maker MZ/RPGMZ.app/Contents/Resources/newdata'),
+    );
+  } else if (process.platform === 'win32') {
+    candidates.push(
+      'C:\\Program Files\\Steam\\steamapps\\common\\RPG Maker MZ\\newdata',
+      'C:\\Program Files (x86)\\Steam\\steamapps\\common\\RPG Maker MZ\\newdata',
+      path.join(home, 'Steam/steamapps/common/RPG Maker MZ/newdata'),
+    );
+  }
+
+  for (const dir of candidates) {
+    try {
+      await fs.access(path.join(dir, 'js', 'main.js'));
+      return dir;
+    } catch {
+      // Not found, try next
+    }
+  }
+  return null;
 }
 
 export function registerProjectTools(server: McpServer): void {
@@ -70,8 +110,9 @@ export function registerProjectTools(server: McpServer): void {
     {
       projectPath: z.string().describe('Absolute path where the project will be created'),
       gameTitle: z.string().describe('Title of the game'),
+      rpgmakerPath: z.string().optional().describe('RPG Maker MZ installation path (auto-detected if omitted)'),
     },
-    async ({ projectPath, gameTitle }) => {
+    async ({ projectPath, gameTitle, rpgmakerPath }) => {
       try {
         // Check if directory already exists with content
         if (await FileHandler.exists(path.join(projectPath, 'Game.rmmzproject'))) {
@@ -86,12 +127,13 @@ export function registerProjectTools(server: McpServer): void {
 
         // Create directory structure
         const dirs = [
-          'data', 'img/animations', 'img/battlebacks1', 'img/battlebacks2',
+          'data', 'css', 'fonts', 'icon',
+          'img/animations', 'img/battlebacks1', 'img/battlebacks2',
           'img/characters', 'img/enemies', 'img/faces', 'img/parallaxes',
           'img/pictures', 'img/sv_actors', 'img/sv_enemies', 'img/system',
           'img/tilesets', 'img/titles1', 'img/titles2',
           'audio/bgm', 'audio/bgs', 'audio/me', 'audio/se',
-          'js/plugins', 'movies', 'effects',
+          'js/plugins', 'js/libs', 'movies', 'effects',
         ];
         for (const dir of dirs) {
           await FileHandler.ensureDir(path.join(projectPath, dir));
@@ -152,16 +194,74 @@ export function registerProjectTools(server: McpServer): void {
           { id: 1, expanded: false, name: 'Map001', order: 1, parentId: 0, scrollX: 0, scrollY: 0 },
         ]);
 
+        // Write embedded template files
+        await fs.writeFile(path.join(projectPath, 'index.html'), INDEX_HTML, 'utf-8');
+        await fs.writeFile(path.join(projectPath, 'css', 'game.css'), GAME_CSS, 'utf-8');
+        await fs.writeFile(path.join(projectPath, 'js', 'plugins.js'), PLUGINS_JS, 'utf-8');
+
+        // Copy engine files from RPG Maker MZ installation
+        const engineWarnings: string[] = [];
+        const newdataDir = await findNewdataDir(rpgmakerPath);
+
+        if (newdataDir) {
+          const engineFiles = [
+            'js/main.js',
+            'js/rmmz_core.js',
+            'js/rmmz_managers.js',
+            'js/rmmz_objects.js',
+            'js/rmmz_scenes.js',
+            'js/rmmz_sprites.js',
+            'js/rmmz_windows.js',
+            'js/libs/pixi.js',
+            'js/libs/pako.min.js',
+            'js/libs/localforage.min.js',
+            'js/libs/effekseer.min.js',
+            'js/libs/effekseer.wasm',
+            'js/libs/vorbisdecoder.js',
+            'fonts/mplus-1m-regular.woff',
+            'fonts/mplus-2p-bold-sub.woff',
+          ];
+
+          let copiedCount = 0;
+          for (const relPath of engineFiles) {
+            const src = path.join(newdataDir, relPath);
+            const dest = path.join(projectPath, relPath);
+            try {
+              await fs.copyFile(src, dest);
+              copiedCount++;
+            } catch {
+              engineWarnings.push(`Could not copy ${relPath}`);
+            }
+          }
+          logger.info(`Copied ${copiedCount}/${engineFiles.length} engine files from ${newdataDir}`);
+        } else {
+          engineWarnings.push(
+            'RPG Maker MZ installation not found. Engine files (js/main.js, js/rmmz_*.js, js/libs/*, fonts/*) were not copied.',
+            'To fix: open the project in RPG Maker MZ, or re-run create_project with rpgmakerPath pointing to your installation.',
+          );
+        }
+
         // Load the created project
         const manager = await ProjectManager.load(projectPath);
         currentProject = manager;
 
         logger.info(`Project created: ${projectPath}`);
 
+        let resultText = `Project created successfully!\n\nTitle: ${gameTitle}\nPath: ${projectPath}\n\nCreated files:\n- Game.rmmzproject\n- index.html, css/game.css, js/plugins.js\n- data/System.json\n- data/Actors.json (1 default actor)\n- data/Classes.json (1 default class)\n- data/Skills.json, Items.json, Weapons.json, Armors.json, Enemies.json, States.json\n- data/Map001.json (17x13 default map)\n- data/MapInfos.json\n- data/CommonEvents.json, Troops.json, Animations.json, Tilesets.json`;
+
+        if (newdataDir && engineWarnings.length === 0) {
+          resultText += `\n- Engine files copied from: ${newdataDir}`;
+        }
+        if (engineWarnings.length > 0) {
+          resultText += `\n\nWarnings:\n${engineWarnings.map((w) => `- ${w}`).join('\n')}`;
+        }
+
+        resultText += '\n\nThe project is now loaded and ready to use.';
+
         return {
           content: [{
             type: 'text' as const,
-            text: `Project created successfully!\n\nTitle: ${gameTitle}\nPath: ${projectPath}\n\nCreated files:\n- Game.rmmzproject\n- data/System.json\n- data/Actors.json (1 default actor)\n- data/Classes.json (1 default class)\n- data/Skills.json, Items.json, Weapons.json, Armors.json, Enemies.json, States.json\n- data/Map001.json (17x13 default map)\n- data/MapInfos.json\n- data/CommonEvents.json, Troops.json, Animations.json, Tilesets.json\n\nThe project is now loaded and ready to use.`,
+            text: resultText,
           }],
         };
       } catch (error) {
