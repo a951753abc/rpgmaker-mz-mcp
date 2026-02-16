@@ -5,6 +5,8 @@
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.26.0-orange)](https://modelcontextprotocol.io)
 [![Tests](https://img.shields.io/badge/Tests-42%20passed-brightgreen)]()
 
+**English** | [繁體中文](#繁體中文) | [日本語](#日本語)
+
 A **stable, well-tested** [Model Context Protocol](https://modelcontextprotocol.io) server that lets AI assistants like Claude create and edit [RPG Maker MZ](https://www.rpgmakerweb.com/products/rpg-maker-mz) projects through natural language.
 
 > **Why another one?** Existing RPG Maker MZ MCP servers on GitHub suffer from critical issues — stdout pollution breaking the MCP protocol, wrong file extensions, no atomic writes, no tests, and outdated SDKs. This project was built from scratch to fix all of them.
@@ -225,3 +227,153 @@ That's it. Just 2 runtime dependencies.
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
 
 You are free to use, modify, and distribute this software, provided that derivative works are also distributed under the same license.
+
+---
+
+<a id="繁體中文"></a>
+## 繁體中文
+
+[English](#-rpg-maker-mz-mcp-server) | **繁體中文** | [日本語](#日本語)
+
+### 簡介
+
+一個**穩定、經過完整測試**的 [Model Context Protocol](https://modelcontextprotocol.io) 伺服器，讓 Claude 等 AI 助手能透過自然語言建立和編輯 [RPG Maker MZ](https://www.rpgmakerweb.com/products/rpg-maker-mz) 專案。
+
+> **為什麼要重新開發？** GitHub 上現有的 RPG Maker MZ MCP Server 都有嚴重問題 — stdout 污染導致 MCP 協議損壞、副檔名錯誤、沒有原子寫入、沒有測試、SDK 過時。本專案從頭開發，解決了所有已知問題。
+
+### 特色
+
+- **原子寫入**：先寫入 `.tmp` 暫存檔，再用 `fs.rename()` 覆蓋目標，防止寫入中斷導致資料損壞
+- **自動備份**：每次寫入前自動建立 `.bak` 備份檔
+- **Zod 驗證**：讀取 JSON 時透過 Zod schema 驗證，取代不安全的 `as T` 型別斷言
+- **泛型資料庫管理器**：一個 `DatabaseManager<T>` 處理所有 8 種實體的 CRUD，消除重複程式碼
+- **stderr 日誌**：MCP 使用 stdout 進行 JSON-RPC 通訊，任何 `console.log` 都會破壞協議。本專案只用 `console.error`
+- **版本同步**：每次修改資料檔案後自動更新 `System.json` 的 `versionId`，強制 RPG Maker MZ 編輯器重新載入
+
+### 可用工具（共 23 個）
+
+| 類別 | 工具數 | 說明 |
+|------|:---:|------|
+| 專案管理 | 4 | 載入 / 建立 / 查詢專案資訊 / 列出素材資源 |
+| 資料庫 CRUD | 6 | 列出 / 取得 / 新增 / 更新 / 刪除 / 搜尋（支援角色、職業、技能、道具、武器、防具、敵人、狀態） |
+| 地圖管理 | 5 | 列出 / 建立 / 查看 / 更新 / 刪除地圖 |
+| 事件編輯 | 5 | 列出 / 建立 / 更新 / 新增指令 / 刪除事件（支援 40+ 種人類可讀指令格式） |
+| AI 劇情生成 | 3 | 生成遊戲劇情大綱 / NPC 對話 / 任務設計 |
+
+### 使用範例
+
+連接 MCP Server 後，用自然語言跟 Claude 對話即可：
+
+```
+你：載入我的 RPG Maker MZ 專案，路徑是 /Users/me/Games/MyRPG
+
+你：建立一個戰士角色，名字叫「羅蘭」，攻擊力要高
+
+你：建立一張 20x15 的村莊地圖，叫做「橡木村」，背景音樂用 Town1
+
+你：在地圖 2 的座標 (8, 6) 放一個 NPC 商人
+
+你：幫商人加一段對話：「歡迎光臨！請看看我的商品。」
+
+你：幫我設計一個拯救被綁架公主的任務
+
+你：建立一個回復 200 HP 的治療藥水
+```
+
+### 安裝與設定
+
+```bash
+git clone https://github.com/a951753abc/rpgmaker-mz-mcp.git
+cd rpgmaker-mz-mcp
+npm install
+npm run build
+npm test  # 42 個測試應全部通過
+```
+
+在你的專案目錄建立 `.mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "rpgmaker-mz": {
+      "command": "node",
+      "args": ["/path/to/rpgmaker-mz-mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+---
+
+<a id="日本語"></a>
+## 日本語
+
+[English](#-rpg-maker-mz-mcp-server) | [繁體中文](#繁體中文) | **日本語**
+
+### 概要
+
+**安定性が高く、十分にテスト済み**の [Model Context Protocol](https://modelcontextprotocol.io) サーバーです。Claude などの AI アシスタントが自然言語で [RPG Maker MZ](https://www.rpgmakerweb.com/products/rpg-maker-mz)（RPGツクールMZ）のプロジェクトを作成・編集できるようにします。
+
+> **なぜ新しく開発したのか？** GitHub 上の既存の RPG Maker MZ MCP サーバーには深刻な問題があります — stdout 汚染による MCP プロトコル破損、間違ったファイル拡張子、アトミック書き込みなし、テストなし、古い SDK。本プロジェクトはこれらすべてをゼロから解決しました。
+
+### 特徴
+
+- **アトミック書き込み**：`.tmp` 一時ファイルに書き込み → `fs.rename()` で上書き。書き込み途中のデータ破損を防止
+- **自動バックアップ**：書き込み前に自動で `.bak` バックアップを作成
+- **Zod バリデーション**：JSON 読み取り時に Zod スキーマで検証。安全でない `as T` 型アサーションを排除
+- **汎用データベースマネージャー**：`DatabaseManager<T>` 一つで全 8 種のエンティティの CRUD を処理。コードの重複を排除
+- **stderr 専用ログ**：MCP は stdout を JSON-RPC 通信に使用。`console.log` はプロトコルを破壊するため、`console.error` のみ使用
+- **バージョン同期**：データファイル変更のたびに `System.json` の `versionId` を自動更新し、RPGツクールMZ エディタに再読み込みを強制
+
+### 利用可能なツール（全 23 個）
+
+| カテゴリ | ツール数 | 説明 |
+|---------|:---:|------|
+| プロジェクト管理 | 4 | 読み込み / 作成 / 情報取得 / リソース一覧 |
+| データベース CRUD | 6 | 一覧 / 取得 / 作成 / 更新 / 削除 / 検索（アクター、職業、スキル、アイテム、武器、防具、敵キャラ、ステート対応） |
+| マップ管理 | 5 | 一覧 / 作成 / 詳細 / 更新 / 削除 |
+| イベント編集 | 5 | 一覧 / 作成 / 更新 / コマンド追加 / 削除（40以上の人間が読めるコマンド形式対応） |
+| AI シナリオ生成 | 3 | ゲームシナリオ概要 / NPC 会話 / クエスト設計の生成 |
+
+### 使用例
+
+MCP サーバー接続後、Claude に自然言語で話しかけるだけで操作できます：
+
+```
+あなた：/Users/me/Games/MyRPG にある RPGツクールMZ のプロジェクトを読み込んで
+
+あなた：「ローランド」という名前の戦士キャラクターを作って、攻撃力を高めに
+
+あなた：20x15 の村マップを作って、名前は「オークウッド村」、BGMは Town1 で
+
+あなた：マップ 2 の座標 (8, 6) に NPC の商人を配置して
+
+あなた：商人にセリフを追加して：「いらっしゃいませ！商品をご覧ください。」
+
+あなた：さらわれた姫を救出するクエストを設計して
+
+あなた：HP を 200 回復する回復薬を作って
+```
+
+### インストールと設定
+
+```bash
+git clone https://github.com/a951753abc/rpgmaker-mz-mcp.git
+cd rpgmaker-mz-mcp
+npm install
+npm run build
+npm test  # 42 テストがすべてパスするはず
+```
+
+プロジェクトディレクトリに `.mcp.json` を作成：
+
+```json
+{
+  "mcpServers": {
+    "rpgmaker-mz": {
+      "command": "node",
+      "args": ["/path/to/rpgmaker-mz-mcp/dist/index.js"]
+    }
+  }
+}
+```
